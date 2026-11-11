@@ -8,6 +8,7 @@ sources you trust most first.
 
   python3 add_ships.py LIST.csv noaa        AIS_2025_06_30.csv[.zst]
   python3 add_ships.py LIST.csv noaa-net    2026-01-01 2026-06-30 [every N days, 7]
+  python3 add_ships.py LIST.csv dma-net     2025-01-01 2025-12-31 [every N days, 7]
   python3 add_ships.py LIST.csv fcc         l_ship.zip | folder with SH.dat, HD.dat
   python3 add_ships.py LIST.csv digitraffic [vessels.json]     (no file: download it)
   python3 add_ships.py LIST.csv wikidata    query.csv
@@ -46,6 +47,15 @@ The sources (check their terms again before you publish):
                    ?ship rdfs:label ?name . FILTER(LANG(?name) = "en")
                  }
 
+  dma-net      Danish Emergency Management Agency (DEMA), historical AIS data
+               of the Danish AIS system, one zip per day, read straight from
+               http://aisdata.ais.dk/ (nothing written to disk).  Credit:
+               "historical AIS data taken from the Danish AIS system under
+               the Danish Emergency Management Agency".  Pleasure craft,
+               sailing vessels and Class B craft of unknown type are left out
+               (their data may identify private persons, which DEMA's terms
+               do not allow).  The days done are
+               written in LIST.csv.dma-days.
   sdrangel     the ITU coast station list (MMSI 00xxxxxxx and name), as
                included in SDRangel's DSC decoder: plugins/channelrx/
                demoddsc/coaststations.cpp of https://github.com/f4exb/sdrangel
@@ -66,6 +76,7 @@ import io
 import json
 import os
 import sys
+import urllib.parse
 import urllib.request
 import zipfile
 
@@ -73,6 +84,7 @@ HEADER = ["mmsi", "ship_name", "call_sign", "ship_type", "source"]
 SOURCES = {
     "noaa": "NOAA AIS",
     "noaa-net": "NOAA AIS",
+    "dma-net": "DEMA Denmark AIS",
     "fcc": "FCC ULS",
     "digitraffic": "Fintraffic Digitraffic (CC BY 4.0)",
     "wikidata": "Wikidata (CC0)",
@@ -165,6 +177,80 @@ def read_noaa_url(url):
             for row in csv.reader(f):
                 if len(row) >= 11 and row[0].isdigit():
                     yield row[0], row[7], row[9], ais_type(row[10])
+
+
+# DEMA ship types, to the words used for the other sources
+_DMA_TYPES = {"Cargo": "Cargo", "Tanker": "Tanker", "Passenger": "Passenger", "Fishing": "Fishing",
+              "Tug": "Tug", "Towing": "Towing", "Towing long/wide": "Towing(long)",
+              "Dredging": "Dredging", "Diving": "Diving", "Military": "Military", "Pilot": "Pilot",
+              "SAR": "SAR", "Port tender": "Port Tender", "Anti-pollution": "Anti Pollution",
+              "Law enforcement": "Law Enforcement", "Medical": "Medical Transport",
+              "HSC": "HSC", "WIG": "WIG", "Other": "Other", "Not party to conflict": "Not Conflict"}
+_DMA_SKIP = ("Pleasure", "Sailing")
+
+
+def _zip_stream_lines(resp):
+    """the lines of the first file of a zip read as it arrives (local header + deflate)"""
+    import struct
+    import zlib
+    head = resp.read(30)
+    sig, _, flag, method, _, _, _, csize, usize, fl, el = struct.unpack("<IHHHHHIIIHH", head)
+    if sig != 0x04034B50 or method != 8:
+        raise ValueError("not a deflated zip")
+    resp.read(fl + el)
+    dec = zlib.decompressobj(-15)
+    rest = b""
+    while not dec.eof:
+        chunk = resp.read(1 << 20)
+        if not chunk:
+            break
+        data = rest + dec.decompress(chunk)
+        lines = data.split(b"\n")
+        rest = lines.pop()
+        for line in lines:
+            yield line.decode("utf-8", "replace")
+    if rest:
+        yield rest.decode("utf-8", "replace")
+
+
+DMA_BUCKET = "http://aisdata.ais.dk.s3.eu-central-1.amazonaws.com"
+
+
+def dma_daily_files():
+    """date -> key of the daily files (aisdk-YYYY-MM-DD.zip, in a year folder or not;
+    the older months come as one big zip each and are left out)"""
+    import re
+    keys, token = {}, None
+    while True:
+        url = DMA_BUCKET + "/?list-type=2&max-keys=1000"
+        if token:
+            url += "&continuation-token=" + urllib.parse.quote(token)
+        with urllib.request.urlopen(url, timeout=60) as resp:
+            xml = resp.read().decode("utf-8", "replace")
+        for k in re.findall(r"<Key>([^<]+)</Key>", xml):
+            m = re.search(r"aisdk-(\d{4}-\d{2}-\d{2})\.zip$", k)
+            if m:
+                keys[m.group(1)] = k
+        t = re.search(r"<NextContinuationToken>([^<]+)</NextContinuationToken>", xml)
+        if not t:
+            return keys
+        token = t.group(1)
+
+
+def read_dma_url(url):
+    """# Timestamp,Type of mobile,MMSI,...,IMO,Callsign,Name,Ship type,..."""
+    req = urllib.request.Request(url, headers={"User-Agent": "x6100-dsc-shiplist"})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        for row in csv.reader(_zip_stream_lines(resp)):
+            if len(row) < 14 or not row[2].isdigit() or row[1] not in ("Class A", "Class B"):
+                continue
+            typ = row[13]
+            if typ in _DMA_SKIP:
+                continue
+            if row[1] == "Class B" and typ not in _DMA_TYPES:
+                continue                    # small craft of unknown kind: may be private
+            call = "" if row[11] == "Unknown" else row[11]
+            yield row[2], row[12], call, _DMA_TYPES.get(typ, "")
 
 
 def read_noaa(path):
@@ -269,7 +355,7 @@ def read_extra(path):
                    row.get("ship_type"), row.get("source"))
 
 
-READERS = {"noaa": read_noaa, "noaa-net": None, "fcc": read_fcc, "digitraffic": read_digitraffic,
+READERS = {"noaa": read_noaa, "noaa-net": None, "dma-net": None, "fcc": read_fcc, "digitraffic": read_digitraffic,
            "wikidata": read_wikidata, "sdrangel": read_sdrangel, "extra": read_extra}
 
 
@@ -330,8 +416,9 @@ def add_from(rows, known, records, source, coast=False):
     return read, len(new)
 
 
-def noaa_net(lst, rows, header, known, first, last, step):
-    done_path = lst + ".noaa-days"
+def net_days(kind, lst, rows, header, known, first, last, step):
+    """one day at a time from NOAA or DEMA, the list saved after each day"""
+    done_path = lst + (".noaa-days" if kind == "noaa-net" else ".dma-days")
     done = set()
     if os.path.exists(done_path):
         with open(done_path) as f:
@@ -343,14 +430,24 @@ def noaa_net(lst, rows, header, known, first, last, step):
         days.append(d.isoformat())
         d += datetime.timedelta(days=step)
     todo = [x for x in days if x not in done]
-    print("NOAA: %d days from %s to %s every %d, %d already done, %d to do."
-          % (len(days), first, last, step, len(days) - len(todo), len(todo)))
+    if kind == "dma-net":
+        files = dma_daily_files()
+        missing = [x for x in todo if x not in files]
+        if missing:
+            print("dma-net: no daily file for %d of these days (older months come as one "
+                  "big zip, left out)" % len(missing))
+        todo = [x for x in todo if x in files]
+    print("%s: %d days from %s to %s every %d, %d already done, %d to do."
+          % (kind, len(days), first, last, step, len(days) - len(todo), len(todo)))
     for day in todo:
-        url = ("https://noaaocm.blob.core.windows.net/ais/csv2/csv%s/ais-%s.csv.zst"
-               % (day[:4], day))
+        if kind == "noaa-net":
+            records = read_noaa_url("https://noaaocm.blob.core.windows.net/ais/csv2/csv%s/"
+                                    "ais-%s.csv.zst" % (day[:4], day))
+        else:
+            records = read_dma_url(DMA_BUCKET + "/" + files[day])
         before = len(rows)
         try:
-            read, added = add_from(rows, known, read_noaa_url(url), SOURCES["noaa-net"])
+            read, added = add_from(rows, known, records, SOURCES[kind])
         except Exception as e:                            # a missing day, a network error
             print("%s: skipped (%s)" % (day, e))
             continue
@@ -368,11 +465,11 @@ def main():
     rows, header = load_list(lst)
     known = {r[0] for r in rows}
 
-    if kind == "noaa-net":
+    if kind in ("noaa-net", "dma-net"):
         if len(sys.argv) < 5:
-            sys.exit("usage: python3 add_ships.py LIST.csv noaa-net FIRST LAST [every N days]")
+            sys.exit("usage: python3 add_ships.py LIST.csv %s FIRST LAST [every N days]" % kind)
         step = int(sys.argv[5]) if len(sys.argv) > 5 else 7
-        noaa_net(lst, rows, header, known, sys.argv[3], sys.argv[4], step)
+        net_days(kind, lst, rows, header, known, sys.argv[3], sys.argv[4], step)
         return
 
     src = sys.argv[3] if len(sys.argv) > 3 else None

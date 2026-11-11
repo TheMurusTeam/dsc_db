@@ -46,6 +46,7 @@ never changed by the later ones.
 | `FCC ULS` | U.S. Federal Communications Commission, Universal Licensing System, ship station licences (records SH: call sign, ship name, MMSI), weekly complete file `l_ship.zip` from https://data.fcc.gov/download/pub/uls/complete/ | U.S. Government Works (https://www.usa.gov/government-works), as listed on https://catalog.data.gov/dataset/fcc-universal-licensing-system-uls | 150,223 |
 | `Wikidata (CC0)` | Wikidata, items with an MMSI (property P587) and an English label, https://www.wikidata.org | CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/) | 35,672 |
 | `Fintraffic Digitraffic (CC BY 4.0)` | Fintraffic Digitraffic, vessel metadata of the AIS received in Finland, https://meri.digitraffic.fi/api/ais/v1/vessels | CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) | 936 |
+| `DEMA Denmark AIS` | Danish Emergency Management Agency (DEMA), historical AIS data of the Danish AIS system, daily files from http://aisdata.ais.dk/: only the static fields MMSI, vessel name, call sign and ship type; pleasure craft, sailing vessels and Class B craft of unknown type left out | Free to use, see "The Danish data" below | (to be filled in) |
 | `ITU (via SDRangel)` | The ITU list of coast stations (https://www.itu.int/mmsapp/coaststation/list), as included since 2024 in the DSC decoder of SDRangel: `plugins/channelrx/demoddsc/coaststations.cpp` of https://github.com/f4exb/sdrangel | ITU data, see "The coast stations" below | 676 |
 | `FCC ULS` (coast) | FCC ULS coast station licences (`l_coast.zip`): KSM and SailMail, in `extra_stations.csv` | U.S. Government Works | 2 |
 | `NOAA AIS` | NOAA Office for Coastal Management and BOEM, MarineCadastre.gov, Nationwide Automatic Identification System, 562 daily files from 2020 to 2026 (`ais-YYYY-MM-DD.csv.zst` from https://noaaocm.blob.core.windows.net/ais/csv2/): only the static fields MMSI, vessel name, call sign and vessel type | U.S. Government work, see "The NOAA data" below | 72,769 |
@@ -88,6 +89,23 @@ Suggested citation: NOAA Office for Coastal Management. (2026). Nationwide
 Automatic Identification System 2026. Marine Cadastre. https://marinecadastre.gov.
 The NOAA lines are marked by their `source` column.
 
+### The Danish data
+
+DEMA confirmed to us in writing (11 November 2026) that it does not
+interfere with what the data is used for, and that it may be cited as:
+
+> Historical AIS data taken from the Danish AIS system under the Danish
+> Emergency Management Agency.
+
+Their terms (https://www.brs.dk/da/om-os/organisation/sikre-farvande/ais-data/):
+DEMA does not guarantee the accuracy of the AIS data and is not liable for
+any damage from its use; the recipient must process the data in accordance
+with applicable legislation; and the data may not be combined with other
+data in a way that creates personally identifiable information. For this
+reason only four static fields per vessel are kept, with no positions,
+times or tracks, and pleasure craft, sailing vessels and Class B craft of
+unknown type are left out.
+
 ### The coast stations
 
 The names of the coast stations are ITU data: SDRangel's `coaststations.cpp`
@@ -111,7 +129,7 @@ licence.
 
 The data keeps the terms of its source: the coast stations are ITU data (see
 "The coast stations");
-the Digitraffic lines CC BY 4.0, with the credit above wherever the list is
+the DEMA lines with the credit above; the Digitraffic lines CC BY 4.0, with the credit above wherever the list is
 redistributed; the Wikidata lines CC0; the FCC and NOAA lines U.S.
 Government material (see "The NOAA data" for NOAA's own words).
 
@@ -132,11 +150,14 @@ python3 add_ships.py lista.csv wikidata wikidata.csv
 python3 add_ships.py lista.csv sdrangel                    # downloads it
 python3 add_ships.py lista.csv extra extra_stations.csv
 python3 add_ships.py lista.csv noaa-net 2020-01-01 2026-06-30 3   # a day in 3
+python3 add_ships.py lista.csv dma-net 2024-03-01 2026-06-30 7    # a day a week
 ```
 
-`noaa-net` reads each NOAA day straight from their server, nothing is
-written to disk; the days done are kept in `lista.csv.noaa-days`, so it
-goes on from there when run again.
+`noaa-net` and `dma-net` read each day straight from the NOAA and DEMA
+servers, nothing is written to disk; the days done are kept in
+`lista.csv.noaa-days` and `lista.csv.dma-days`, so they go on from there
+when run again. DEMA has daily files from March 2024; the older months come
+as one large file each and are left out.
 
 `wikidata.csv` is the result, downloaded as CSV, of this query on
 https://query.wikidata.org:
