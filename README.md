@@ -46,12 +46,12 @@ never changed by the later ones.
 | `FCC ULS` | U.S. Federal Communications Commission, Universal Licensing System, ship station licences (records SH: call sign, ship name, MMSI), weekly complete file `l_ship.zip` from https://data.fcc.gov/download/pub/uls/complete/ | U.S. Government Works (https://www.usa.gov/government-works), as listed on https://catalog.data.gov/dataset/fcc-universal-licensing-system-uls | 150,223 |
 | `Wikidata (CC0)` | Wikidata, items with an MMSI (property P587) and an English label, https://www.wikidata.org | CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/) | 35,672 |
 | `Fintraffic Digitraffic (CC BY 4.0)` | Fintraffic Digitraffic, vessel metadata of the AIS received in Finland, https://meri.digitraffic.fi/api/ais/v1/vessels | CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) | 936 |
-| `DEMA Denmark AIS` | Danish Emergency Management Agency (DEMA), historical AIS data of the Danish AIS system, daily files from http://aisdata.ais.dk/: only the static fields MMSI, vessel name, call sign and ship type; pleasure craft, sailing vessels and Class B craft of unknown type left out | Free to use, see "The Danish data" below | (to be filled in) |
+| `DEMA Denmark AIS` | Danish Emergency Management Agency (DEMA), historical AIS data of the Danish AIS system, 143 daily files from March 2024 to June 2026 from http://aisdata.ais.dk/: only the static fields MMSI, vessel name, call sign and ship type; pleasure craft, sailing vessels and Class B craft of unknown type left out | Free to use, see "The Danish data" below | 12,125 |
 | `ITU (via SDRangel)` | The ITU list of coast stations (https://www.itu.int/mmsapp/coaststation/list), as included since 2024 in the DSC decoder of SDRangel: `plugins/channelrx/demoddsc/coaststations.cpp` of https://github.com/f4exb/sdrangel | ITU data, see "The coast stations" below | 676 |
 | `FCC ULS` (coast) | FCC ULS coast station licences (`l_coast.zip`): KSM and SailMail, in `extra_stations.csv` | U.S. Government Works | 2 |
 | `NOAA AIS` | NOAA Office for Coastal Management and BOEM, MarineCadastre.gov, Nationwide Automatic Identification System, 562 daily files from 2020 to 2026 (`ais-YYYY-MM-DD.csv.zst` from https://noaaocm.blob.core.windows.net/ais/csv2/): only the static fields MMSI, vessel name, call sign and vessel type | U.S. Government work, see "The NOAA data" below | 72,769 |
 
-Counts as of 11 November 2026: 260,278 stations.
+Counts as of 11 November 2026: 272,403 stations.
 
 ### Attribution
 
