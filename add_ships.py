@@ -46,10 +46,11 @@ The sources (check their terms again before you publish):
                    ?ship rdfs:label ?name . FILTER(LANG(?name) = "en")
                  }
 
-  sdrangel     coast stations of SDRangel's DSC decoder (MMSI 00xxxxxxx and
-               name), plugins/channelrx/demoddsc/coaststations.cpp of
-               https://github.com/f4exb/sdrangel, Copyright (C) 2024 Jon
-               Beniston, M7RCE, GPL-3.0-or-later.  Type "Coast station".
+  sdrangel     the ITU coast station list (MMSI 00xxxxxxx and name), as
+               included in SDRangel's DSC decoder: plugins/channelrx/
+               demoddsc/coaststations.cpp of https://github.com/f4exb/sdrangel
+               ("From https://www.itu.int/mmsapp/coaststation/list").
+               Type "Coast station".
   extra        a CSV of your own, same columns as LIST.csv (mmsi,
                ship_name, call_sign, ship_type, source): ships or coast
                stations, each with its own source.
@@ -75,7 +76,7 @@ SOURCES = {
     "fcc": "FCC ULS",
     "digitraffic": "Fintraffic Digitraffic (CC BY 4.0)",
     "wikidata": "Wikidata (CC0)",
-    "sdrangel": "SDRangel (GPL-3.0)",
+    "sdrangel": "ITU (via SDRangel)",
     "extra": None,                    # the file's own source column
 }
 SDRANGEL_URL = ("https://raw.githubusercontent.com/f4exb/sdrangel/master/"

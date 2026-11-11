@@ -46,11 +46,11 @@ never changed by the later ones.
 | `FCC ULS` | U.S. Federal Communications Commission, Universal Licensing System, ship station licences (records SH: call sign, ship name, MMSI), weekly complete file `l_ship.zip` from https://data.fcc.gov/download/pub/uls/complete/ | U.S. Government Works (https://www.usa.gov/government-works), as listed on https://catalog.data.gov/dataset/fcc-universal-licensing-system-uls | 150,223 |
 | `Wikidata (CC0)` | Wikidata, items with an MMSI (property P587) and an English label, https://www.wikidata.org | CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/) | 35,672 |
 | `Fintraffic Digitraffic (CC BY 4.0)` | Fintraffic Digitraffic, vessel metadata of the AIS received in Finland, https://meri.digitraffic.fi/api/ais/v1/vessels | CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) | 936 |
-| `SDRangel (GPL-3.0)` | Coast stations of the DSC decoder of SDRangel, `plugins/channelrx/demoddsc/coaststations.cpp` of https://github.com/f4exb/sdrangel, Copyright (C) 2024 Jon Beniston, M7RCE | GPL-3.0-or-later | 676 |
+| `ITU (via SDRangel)` | The ITU list of coast stations (https://www.itu.int/mmsapp/coaststation/list), as included since 2024 in the DSC decoder of SDRangel: `plugins/channelrx/demoddsc/coaststations.cpp` of https://github.com/f4exb/sdrangel | ITU data, see "The coast stations" below | 676 |
 | `FCC ULS` (coast) | FCC ULS coast station licences (`l_coast.zip`): KSM and SailMail, in `extra_stations.csv` | U.S. Government Works | 2 |
-| `NOAA` | NOAA Office for Coastal Management and BOEM, MarineCadastre.gov, Nationwide Automatic Identification System, daily files of 2026 (`ais-2026-MM-DD.csv.zst` from https://noaaocm.blob.core.windows.net/ais/csv2/csv2026/): only the static fields MMSI, vessel name, call sign and vessel type | U.S. Government work, see "The NOAA data" below | (to be filled in) |
+| `NOAA AIS` | NOAA Office for Coastal Management and BOEM, MarineCadastre.gov, Nationwide Automatic Identification System, 562 daily files from 2020 to 2026 (`ais-YYYY-MM-DD.csv.zst` from https://noaaocm.blob.core.windows.net/ais/csv2/): only the static fields MMSI, vessel name, call sign and vessel type | U.S. Government work, see "The NOAA data" below | 72,769 |
 
-Counts as of 10 November 2026: 186,831 ships.
+Counts as of 11 November 2026: 260,278 stations.
 
 ### Attribution
 
@@ -88,17 +88,14 @@ Suggested citation: NOAA Office for Coastal Management. (2026). Nationwide
 Automatic Identification System 2026. Marine Cadastre. https://marinecadastre.gov.
 The NOAA lines are marked by their `source` column.
 
-### SDRangel
+### The coast stations
 
-The coast stations come from SDRangel under the GNU General Public License,
-version 3 or later:
-
-> Copyright (C) 2024 Jon Beniston, M7RCE <jon@beniston.com>
->
-> This program is free software; you can redistribute it and/or modify it
-> under the terms of the GNU General Public License as published by the Free
-> Software Foundation as version 3 of the License, or (at your option) any
-> later version.
+The names of the coast stations are ITU data: SDRangel's `coaststations.cpp`
+says "From https://www.itu.int/mmsapp/coaststation/list". The ITU publishes
+that list free to consult, and SDRangel (Copyright (C) 2024 Jon Beniston,
+M7RCE, GPL-3.0-or-later for its code) has distributed it since 2024; they
+are taken here from SDRangel. We have asked the ITU to confirm that they may
+be used this way and will report their answer here.
 
 ## Licence
 
@@ -106,13 +103,14 @@ The tools (`add_ships.py`, `make_ships_db.py`) are released under the GNU
 Lesser General Public License, version 2.1 or later (`LICENSE`), Copyright
 (C) 2026 Hany El Imam.
 
-The list (`lista.csv`, and `ships.bin` built from it) contains the SDRangel
-coast stations, so as a whole it is released under the GNU General Public
-License, version 3 or later (`COPYING-GPL-3.0`), Copyright (C) 2026 Hany El
-Imam for the selection, merging, cleaning and format. It is a data file:
-a program that reads it is not bound by its licence.
+The list (`lista.csv`, and `ships.bin` built from it) is released under the
+GNU General Public License, version 3 or later (`COPYING-GPL-3.0`),
+Copyright (C) 2026 Hany El Imam for the selection, merging, cleaning and
+format. It is a data file: a program that reads it is not bound by its
+licence.
 
-The data keeps the terms of its source: the SDRangel lines GPL-3.0-or-later;
+The data keeps the terms of its source: the coast stations are ITU data (see
+"The coast stations");
 the Digitraffic lines CC BY 4.0, with the credit above wherever the list is
 redistributed; the Wikidata lines CC0; the FCC and NOAA lines U.S.
 Government material (see "The NOAA data" for NOAA's own words).
@@ -133,7 +131,7 @@ python3 add_ships.py lista.csv fcc l_ship.zip
 python3 add_ships.py lista.csv wikidata wikidata.csv
 python3 add_ships.py lista.csv sdrangel                    # downloads it
 python3 add_ships.py lista.csv extra extra_stations.csv
-python3 add_ships.py lista.csv noaa-net 2026-01-01 2026-06-30 1   # every day
+python3 add_ships.py lista.csv noaa-net 2020-01-01 2026-06-30 3   # a day in 3
 ```
 
 `noaa-net` reads each NOAA day straight from their server, nothing is
