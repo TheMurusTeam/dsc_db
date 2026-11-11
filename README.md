@@ -112,8 +112,7 @@ The names of the coast stations are ITU data: SDRangel's `coaststations.cpp`
 says "From https://www.itu.int/mmsapp/coaststation/list". The ITU publishes
 that list free to consult, and SDRangel (Copyright (C) 2024 Jon Beniston,
 M7RCE, GPL-3.0-or-later for its code) has distributed it since 2024; they
-are taken here from SDRangel. We have asked the ITU to confirm that they may
-be used this way and will report their answer here.
+are taken here from SDRangel.
 
 ## Licence
 
